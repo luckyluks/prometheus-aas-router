@@ -9,16 +9,16 @@ This app is currently using [a fork of said Basyx Updater](https://github.com/n1
 
 ## Goal
 
-Integrate device data, eg. performance metrics, in its digital twin representation: the asset administation shell.
+Integrate device metric data, eg. performance metrics, in its digital twin representation: the Asset Administation Shell.
 
 ## Requirements
 
 - Java 8
 - Maven
-- Prometheus with Nodeexporter ([available as Docker image](https://prometheus.io/docs/prometheus/latest/installation/#using-docker))
+- Prometheus with Node exporter ([available as Docker image](https://prometheus.io/docs/prometheus/latest/installation/#using-docker))
 - AAS Server ([eg. from Basyx, available as Docker image](https://wiki.eclipse.org/BaSyx_/_Documentation_/_Components_/_AAS_Server))
 - local maven installation of the following modules of [the Basyx Updater fork](https://github.com/n14s/basyx-java-components/tree/n14s/feature/prometheus-updater/basyx.components/basyx.components.updater)  
-  (Amoreconvenientintegrationofthosemodulesthroughmvnrepository.comwillfollow):
+  (Amoreconvenientintegrationofthosemodulesthroughmvnrepositorywillfollow):
   - basyx.components.updater.core
   - basyx.components.updater.camel-aas
   - basyx.components.updater.camel-prometheus
@@ -35,14 +35,42 @@ A detailed description of the configuration can be found in the [project's docs]
 
 If all requirements are met, the app can be launched within the prefered IDE.
 
-## Building a JAR
+## Building JAR
 
 The aim of this project is to deploy the app within large environments of heterogeneous devices to monitor their current state.
-A built JAR allows for deployment on a large variety of devices.
+Building a fat JAR (JAR with dependencies integrated) allows for easy deployment on a large variety of devices, only requiring a java 8 runtime environment.
+
 A `mvn package` command results in a jar, built with all dependencies within.
-Config files are placed outside of the jar, to be modified when needed.
+
+## Running JAR
+
+To run the JAR, place it inside a dir together with the config file folder.
+Building this JAR results in such a setup within the target folder by default.
+The JAR can be executed with  
+`java -jar prometheus-updater-1.0-SNAPSHOT-jar-with-dependencies.jar`
+
+A minimal dir-setup in deployment would look like this:
+
+```
+prometheus-aas-router-example/
+├── config
+│   ├── aasserver.json
+│   ├── jsonataA.json
+│   ├── jsonatatransformer.json
+│   ├── logback.xml
+│   ├── prometheus.json
+│   ├── routes.json
+│   └── timerconsumer.json
+└── prometheus-aas-router-1.0-SNAPSHOT-jar-with-dependencies.jar
+```
 
 ## Docker
 
-A Docker Image takes this though a step further.
-This task is currently in progress...
+Docker makes deployment even easier.
+
+The Prometheus-AAS-Router app is available as Docker image on [Docker Hub](https://hub.docker.com/r/n14s/prometheus-aas-router).
+Download the image using  
+`docker pull n14s/prometheus-aas-router`
+
+Run the image by moving into the dir, where your config folder resides, and executing  
+`docker run --network="host" -v $(pwd)/config:/app/config prometheus-aas-router:1.0.0`
