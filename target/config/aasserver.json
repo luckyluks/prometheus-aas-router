@@ -1,0 +1,12 @@
+[
+	{
+		"uniqueId": "ConnectedSubmodel/ConnectedPropertyA",
+		"endpoint": "http://localhost:8081/aasServer/shells/TestUpdatedDeviceAAS/aas",
+		"path": "ConnectedSubmodel/ConnectedPropertyA"
+	},
+	{
+		"uniqueId": "ConnectedSubmodel/ConnectedPropertyB",
+		"endpoint": "http://localhost:8081/aasServer/shells/TestUpdatedDeviceAAS/aas",
+		"path": "ConnectedSubmodel/ConnectedPropertyB"
+	}
+]
