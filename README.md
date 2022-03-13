@@ -74,3 +74,8 @@ Download the image using
 
 Run the image by moving into the dir, where your config folder resides, and executing  
 `docker run --network="host" -v $(pwd)/config:/app/config prometheus-aas-router:1.0.0`
+
+## Docker Compose
+
+A ready to run Docker Compose stack including the Prometheus-AAS-Router, Prometheus, Node exporter and the AAS-server can be found under  
+https://github.com/n14s/prometheus-aas-docker
