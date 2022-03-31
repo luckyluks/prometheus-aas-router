@@ -7,6 +7,8 @@ It is based on the AAS solution of [Eclipse Basyx](https://www.eclipse.org/basyx
 Note:
 This app is currently using [a fork of said Basyx Updater](https://github.com/n14s/basyx-java-components/tree/n14s/feature/prometheus-updater/basyx.components/basyx.components.updater), where the Prometheus component is already integrated. The integration to the [upstream repository](https://github.com/eclipse-basyx/basyx-java-components/tree/feature/updater/basyx.components/basyx.components.updater) will follow soon.
 
+The easiest way to try it out is by running the [docker-compose stack containing the Router App](https://github.com/n14s/prometheus-aas-docker).
+
 ## Goal
 
 Integrate device metric data, eg. performance metrics, in its digital twin representation: the Asset Administation Shell.
@@ -17,8 +19,8 @@ Integrate device metric data, eg. performance metrics, in its digital twin repre
 - Maven
 - Prometheus with Node exporter ([available as Docker image](https://prometheus.io/docs/prometheus/latest/installation/#using-docker))
 - AAS Server ([eg. from Basyx, available as Docker image](https://wiki.eclipse.org/BaSyx_/_Documentation_/_Components_/_AAS_Server))
-- local maven installation of the following modules of [the Basyx Updater fork](https://github.com/n14s/basyx-java-components/tree/n14s/feature/prometheus-updater/basyx.components/basyx.components.updater)  
-  (Amoreconvenientintegrationofthosemodulesthroughmvnrepositorywillfollow):
+- local maven installation of the following modules of [this branch of the Basyx Updater fork](https://github.com/n14s/basyx-java-components/tree/feature/updater-provisional)  
+  (A more convenient integration of those modules through mvn-repository will follow):
   - basyx.components.updater.core
   - basyx.components.updater.camel-aas
   - basyx.components.updater.camel-prometheus
