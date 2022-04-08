@@ -46,7 +46,7 @@ public class PrometheusAASRouter {
     
     // defined defaults, are used if not overwritten via environment variables
     public static final String REGISTRY_URL = "http://localhost:4000/registry";
-	public static final String SERVER_URL = "http://localhost:4001/aasServer";
+    public static final String SERVER_URL = "http://localhost:4001/aasServer";
     public static final String UPDATER_CONFIG_DIR = "./config";
     public static final String AASX_PATH = "/usr/share/config/AAS.aasx";
     public static final String ASSET_ID = "";
