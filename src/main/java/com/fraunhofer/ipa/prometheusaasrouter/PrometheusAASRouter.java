@@ -22,6 +22,7 @@ import org.eclipse.basyx.components.registry.configuration.RegistryBackend;
 import org.eclipse.basyx.submodel.metamodel.api.identifier.IIdentifier;
 import org.eclipse.basyx.submodel.metamodel.api.identifier.IdentifierType;
 import org.eclipse.basyx.submodel.metamodel.map.Submodel;
+import org.eclipse.basyx.submodel.metamodel.map.reference.Reference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
@@ -30,7 +31,10 @@ import org.eclipse.basyx.aas.bundle.AASBundle;
 import org.eclipse.basyx.aas.bundle.AASBundleHelper;
 import org.eclipse.basyx.aas.factory.aasx.AASXToMetamodelConverter;
 import org.eclipse.basyx.aas.manager.ConnectedAssetAdministrationShellManager;
+import org.eclipse.basyx.aas.metamodel.api.parts.asset.AssetKind;
 import org.eclipse.basyx.aas.metamodel.map.AssetAdministrationShell;
+import org.eclipse.basyx.aas.metamodel.map.descriptor.CustomId;
+import org.eclipse.basyx.aas.metamodel.map.parts.Asset;
 import org.eclipse.basyx.aas.registration.proxy.AASRegistryProxy;
 import org.eclipse.basyx.components.IComponent;
 
@@ -118,7 +122,15 @@ public class PrometheusAASRouter {
 
                 String assetIdOld = aas.getIdentification().toString();
                 logger.info("Found assetID '{}' to overwrite", assetIdOld);
-                aas.setIdentification(IdentifierType.CUSTOM, this.assetID);
+                aas.setIdentification(IdentifierType.CUSTOM, this.assetID); // alternatively use aasID
+                
+                // additionally use asset - but this is not yet possible to be used in the url
+                Asset newAsset = new Asset(this.assetID, new CustomId(this.assetID), AssetKind.INSTANCE);
+                aas.setAsset(newAsset); 
+                aas.setAssetReference((Reference) newAsset.getAssetIdentificationModel());
+                aas.setIdShort(this.assetID);
+                
+
                 logger.info("AAS asset ID overwritten from '{}' to '{}'", assetIdOld, aas.getIdentification().toString());
 
             } else {
