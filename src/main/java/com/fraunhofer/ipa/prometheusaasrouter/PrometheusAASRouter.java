@@ -16,12 +16,10 @@ import org.eclipse.basyx.components.aas.AASServerComponent;
 import org.eclipse.basyx.components.aas.configuration.AASServerBackend;
 import org.eclipse.basyx.components.aas.configuration.BaSyxAASServerConfiguration;
 import org.eclipse.basyx.components.configuration.BaSyxContextConfiguration;
-import org.eclipse.basyx.components.registry.RegistryComponent;
-import org.eclipse.basyx.components.registry.configuration.BaSyxRegistryConfiguration;
-import org.eclipse.basyx.components.registry.configuration.RegistryBackend;
 import org.eclipse.basyx.submodel.metamodel.api.identifier.IIdentifier;
 import org.eclipse.basyx.submodel.metamodel.api.identifier.IdentifierType;
 import org.eclipse.basyx.submodel.metamodel.map.Submodel;
+import org.eclipse.basyx.submodel.metamodel.map.identifier.Identifier;
 import org.eclipse.basyx.submodel.metamodel.map.reference.Reference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,23 +46,24 @@ import basyx.components.updater.transformer.cameljsonata.configuration.factory.J
 
 public class PrometheusAASRouter {
     
-    // defined defaults, are used if not overwritten via environment variables
+    // Defined defaults, are used if not overwritten via environment variables
     public static final String REGISTRY_URL = "http://localhost:4000/registry";
     public static final String SERVER_URL = "http://localhost:4001/aasServer";
+    public static final String HOSTPATH_URL = "http://localhost:4001/aasServer/shells";
     public static final String UPDATER_CONFIG_DIR = "./config";
     public static final String AASX_PATH = "/usr/share/config/AAS.aasx";
     public static final String ASSET_ID = "";
 
     private static Logger logger = LoggerFactory.getLogger(PrometheusAASRouter.class);
-    private List<IComponent> startedComponents = new ArrayList<>();
+    private static List<IComponent> startedComponents = new ArrayList<>();
     private URL registryUrl;
     private URL serverUrl; 
+    private URL hostpathUrl;
     private String updaterConfigDirectory;
     private String aasxFilepath;
     private String assetID;
 
     public static void main(String[] args) throws InvalidFormatException, IOException, ParserConfigurationException, SAXException {
-
         new PrometheusAASRouter();
     }
 
@@ -73,6 +72,7 @@ public class PrometheusAASRouter {
         // Fetch local environment if available
         this.registryUrl= new URL(System.getenv().getOrDefault("REGISTRY_URL", REGISTRY_URL));
         this.serverUrl = new URL(System.getenv().getOrDefault("SERVER_URL", SERVER_URL));
+        this.hostpathUrl = new URL(System.getenv().getOrDefault("HOSTPATH_URL", HOSTPATH_URL));
         this.updaterConfigDirectory = System.getenv().getOrDefault("UPDATER_CONFIG_DIR", UPDATER_CONFIG_DIR);
         this.aasxFilepath = System.getenv().getOrDefault("AASX_PATH", AASX_PATH);
         this.assetID = System.getenv().getOrDefault("ASSET_ID", ASSET_ID);
@@ -82,16 +82,17 @@ public class PrometheusAASRouter {
         startAASServer();
         logger.info("AAS server started");
 
-        // register local AAS, if exists
+        // Register local AAS, if exists
         if ((new File(this.aasxFilepath)).exists()){
             loadAndRegisterAAS();
         } else {
             throw new FileNotFoundException(String.format("Provided path '%s' does not exists!", this.aasxFilepath));
         }
 
-        // finally start updater
+        // Finally start updater
         startUpdater();
     }
+
 
     /**
      * Load local AAS to server and register to registry
@@ -124,15 +125,13 @@ public class PrometheusAASRouter {
                 logger.info("Found assetID '{}' to overwrite", assetIdOld);
                 aas.setIdentification(IdentifierType.CUSTOM, this.assetID); // alternatively use aasID
                 
-                // additionally use asset - but this is not yet possible to be used in the url
+                // Additionally use asset - but this is not yet possible to be used in the url
                 Asset newAsset = new Asset(this.assetID, new CustomId(this.assetID), AssetKind.INSTANCE);
                 aas.setAsset(newAsset); 
                 aas.setAssetReference((Reference) newAsset.getAssetIdentificationModel());
                 aas.setIdShort(this.assetID);
-                
-
+            
                 logger.info("AAS asset ID overwritten from '{}' to '{}'", assetIdOld, aas.getIdentification().toString());
-
             } else {
                 logger.info("No external assetID found. Using '{}' from bundle", aas.getIdentification().toString());
             }
@@ -154,7 +153,8 @@ public class PrometheusAASRouter {
         // Get a RegistryProxy and register all Objects contained in the Bundles
         logger.info("Starting registry proxy for registry url '{}' bound to AAS server url '{}'", this.registryUrl, this.serverUrl);
 		AASRegistryProxy proxy = new AASRegistryProxy(this.registryUrl.toString());
-		AASBundleHelper.register(proxy, bundles, this.serverUrl + "/shells");
+        AASBundleHelper.register(proxy, bundles, this.hostpathUrl.toString());
+        
         logger.info("Finished registration successfully");
     };
 
@@ -170,24 +170,24 @@ public class PrometheusAASRouter {
 
         // Extend configuration for connections
         // DefaultRoutesConfigFac takes default routes.json as to config
-        DefaultRoutesConfigurationFactory routesFactory = new DefaultRoutesConfigurationFactory("config/routes.json", loader);
+        DefaultRoutesConfigurationFactory routesFactory = new DefaultRoutesConfigurationFactory(this.updaterConfigDirectory + "/routes.json", loader);
         configuration.addRoutes(routesFactory.getRouteConfigurations());
 
         // Extend configuration for prometheus Source
-        PrometheusDefaultConfigurationFactory prometheusConfigFactory = new PrometheusDefaultConfigurationFactory("config/prometheus.json", loader);
+        PrometheusDefaultConfigurationFactory prometheusConfigFactory = new PrometheusDefaultConfigurationFactory(this.updaterConfigDirectory + "/prometheus.json", loader);
         configuration.addDatasinks(prometheusConfigFactory.getDataSinkConfigurations());
 
         // Extend configuration for AAS
         // DefaultRoutesConfigFactory takes default aasserver.json as to config
-        AASProducerDefaultConfigurationFactory aasConfigFactory = new AASProducerDefaultConfigurationFactory("config/aasserver.json", loader);
+        AASProducerDefaultConfigurationFactory aasConfigFactory = new AASProducerDefaultConfigurationFactory(this.updaterConfigDirectory + "/aasserver.json", loader);
         configuration.addDatasinks(aasConfigFactory.getDataSinkConfigurations());
 
         // Extend configuration for Jsonata
-        JsonataDefaultConfigurationFactory jsonataConfigFactory = new JsonataDefaultConfigurationFactory("config/jsonatatransformer.json", loader);
+        JsonataDefaultConfigurationFactory jsonataConfigFactory = new JsonataDefaultConfigurationFactory(this.updaterConfigDirectory + "/jsonatatransformer.json", loader);
         configuration.addTransformers(jsonataConfigFactory.getDataTransformerConfigurations());
 
         // Extend configuration for Timer
-        TimerDefaultConfigurationFactory timerConfigFactory = new TimerDefaultConfigurationFactory("config/timerconsumer.json", loader);
+        TimerDefaultConfigurationFactory timerConfigFactory = new TimerDefaultConfigurationFactory(this.updaterConfigDirectory + "/timerconsumer.json", loader);
         configuration.addDatasources(timerConfigFactory.getDataSourceConfigurations());
         
         // Instantiate updater
@@ -207,17 +207,19 @@ public class PrometheusAASRouter {
 	 */	
 	private void startAASServer() throws MalformedURLException {
 		
-        // parse URL to context config
+        // Parse URL to context config
 		BaSyxContextConfiguration contextConfig = new BaSyxContextConfiguration(this.serverUrl.getPort(), this.serverUrl.getPath());
 		
-        // Create the AAS - Can alternatively also be loaded from a .property file -> did not work:
-        // [main] INFO org.eclipse.basyx.components.aas.AASServerComponent - Loading aas from aasx "/usr/share/config/minimalAAS.aasx"
-        // Exception in thread "main" java.lang.ClassCastException: org.eclipse.basyx.support.bundle.AASBundle cannot be cast to org.eclipse.basyx.aas.bundle.AASBundle
-		// BaSyxAASServerConfiguration aasServerConfig = new BaSyxAASServerConfiguration(AASServerBackend.INMEMORY, "/usr/share/config/minimalAAS.aasx", REGISTRY_URL);
+        // Create the AAS - Can alternatively also be loaded from a .property file
+		// BaSyxAASServerConfiguration aasServerConfig = new BaSyxAASServerConfiguration(
+        //     AASServerBackend.INMEMORY,
+        //     "", // this.aasxFilepath,
+        //     this.registryUrl.toString(),
+        //     this.hostpathUrl.toString()
+        // );
         // AASServerComponent aasServer = new AASServerComponent(contextConfig, aasServerConfig);
-
         AASServerComponent aasServer = new AASServerComponent(contextConfig);
-		
+
 		// Start the created server
 		aasServer.startComponent();
 		startedComponents.add(aasServer);
