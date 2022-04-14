@@ -91,6 +91,10 @@ public class PrometheusAASRouter {
 
         // Finally start updater
         startUpdater();
+
+        // Setup shutdown procedure
+        Thread shutdownHookThread = initializeShutdownHookThread(this.registryUrl.toString(), this.assetID);
+        Runtime.getRuntime().addShutdownHook(shutdownHookThread);
     }
 
 
@@ -224,4 +228,43 @@ public class PrometheusAASRouter {
 		aasServer.startComponent();
 		startedComponents.add(aasServer);
 	}
+
+    
+    /**
+     * Initialize Thread for shutdown hook, to deregister the AAS and shutdown components gracefully
+     * @param registryUrl the registry url to deregister the AAS
+     * @param assetID the ID of the asset, in this case the aas
+     * @return the Thread object to be used
+     */
+    private Thread initializeShutdownHookThread(String registryUrl, String assetID) {
+        return new Thread(
+            new Runnable() {
+                private String registryUrl;
+                private String assetID;
+
+                public Runnable init(String registryUrl, String assetID) {
+                    this.registryUrl = registryUrl;
+                    this.assetID = assetID;
+                    return this;
+                }
+
+                @Override
+                public void run() {
+                    logger.warn("Shutdown Hook is started!");
+                    logger.info("Configuring registry proxy to delete aas, with url: {}", this.registryUrl);
+                    AASRegistryProxy proxy = new AASRegistryProxy(this.registryUrl);
+                    proxy.delete(new Identifier(IdentifierType.CUSTOM, this.assetID));
+                    logger.info("Deleted aas with id: {}", this.assetID);
+
+                    startedComponents.forEach((component) -> {
+                        logger.info("Stopping BaSyx IComponent: {}", component.toString());
+                        component.stopComponent();
+                    });
+                    logger.info("Shutdown procedure completed!");
+                    logger.warn("Shutdown Hook completed!");
+                }
+            }.init(this.registryUrl.toString(), this.assetID)
+        );
+    }
+
 }
