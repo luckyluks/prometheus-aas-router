@@ -220,9 +220,8 @@ public class PrometheusAASRouter {
 
         for (Map.Entry<String, DataSinkConfiguration> datasink : datasinks.entrySet()) {
             if (datasink.getValue().getClass().equals(AASDatasinkConfiguration.class)){
-                System.out.println(((AASDatasinkConfiguration) datasink.getValue()).getEndpoint());
                 ((AASDatasinkConfiguration) datasink.getValue()).setEndpoint(((AASDatasinkConfiguration) datasink.getValue()).getEndpoint().replace("assetID", this.assetID));
-                System.out.println(((AASDatasinkConfiguration) datasink.getValue()).getEndpoint());
+                logger.info("Replaced 'assetID' with '{}' in endpointURL '{}'", this.assetID, ((AASDatasinkConfiguration) datasink.getValue()).getEndpoint());
             }
         }
         return datasinks;
