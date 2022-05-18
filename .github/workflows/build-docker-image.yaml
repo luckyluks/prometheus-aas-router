@@ -1,0 +1,28 @@
+name: Build Docker Image
+
+env:
+  DOCKER_IMAGE_REPOSITORY: fabos4ai/aas-router
+  DOCKER_IMAGE_TAG: 1.0.0-SNAPSHOT
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build Docker image
+      run: docker build . --file Dockerfile --tag ${{env.DOCKER_IMAGE_REPOSITORY}}:${{env.DOCKER_IMAGE_TAG}}
+    - name: Publish Docker image to registry
+      uses: elgohr/Publish-Docker-Github-Action@v4
+      with:
+        name: ${{env.DOCKER_IMAGE_REPOSITORY}}:${{env.DOCKER_IMAGE_TAG}}
+        username: ${{ secrets.DOCKER_REGISTRY_USERNAME }}
+        password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
